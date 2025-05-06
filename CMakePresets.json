@@ -2,7 +2,7 @@
     "version": 2,
     "configurePresets": [
         {
-            "name": "common-flags",
+            "name": "common-flags-64",
             "hidden": true,
             "generator": "Ninja",
             "cacheVariables": {
@@ -12,12 +12,22 @@
             }
         },
         {
+            "name": "common-flags-32",
+            "hidden": true,
+            "generator": "Ninja",
+            "cacheVariables": {
+              "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+              "CMAKE_C_COMPILER": "i686-w64-mingw32-gcc",
+              "CMAKE_CXX_COMPILER": "i686-w64-mingw32-g++"
+            }
+        },
+        {
             "name": "debug32",
             "displayName": "Debug preset",
             "description": "Enables debugging flags",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "inherits": [
-                "common-flags"
+                "common-flags-32"
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug x86",
@@ -32,7 +42,7 @@
             "description": "Fully featured Release build",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "inherits": [
-              "common-flags"
+              "common-flags-32"
             ],
             "cacheVariables": {
               "CMAKE_BUILD_TYPE": "Release",
@@ -46,7 +56,7 @@
             "description": "Enables debugging flags",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "inherits": [
-                "common-flags"
+                "common-flags-64"
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
@@ -61,7 +71,7 @@
             "description": "Fully featured Release build",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "inherits": [
-              "common-flags"
+              "common-flags-64"
             ],
             "cacheVariables": {
               "CMAKE_BUILD_TYPE": "Release",

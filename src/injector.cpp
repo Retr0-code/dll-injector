@@ -13,18 +13,18 @@ DLLInjector::DLLInjector(DWORD32 dw_pid, LPCSTR lpcs_dllPath)
         throw std::invalid_argument(sv_errorMessage.str());
     }
 
+    if (!this->EnableDebugPrivilege()) {
+        std::stringstream sv_errorMessage;
+        sv_errorMessage << "Error: Unable to gain debug privilege\n"
+            << std::system_category().message(::GetLastError()) << '\n';
+        throw std::runtime_error(sv_errorMessage.str());
+    }
+    
     this->_h_process = ::OpenProcess(PROCESS_ALL_ACCESS, false, dw_pid);
     // this->_h_process = ::OpenProcess(PROCESS_VM_WRITE | PROCESS_CREATE_THREAD, false, dw_pid);
     if (this->_h_process == NULL) {
         std::stringstream sv_errorMessage;
         sv_errorMessage << "Error: Unable to open process handle\n"
-            << std::system_category().message(::GetLastError()) << '\n';
-        throw std::runtime_error(sv_errorMessage.str());
-    }
-
-    if (!this->EnableDebugPrivilege()) {
-        std::stringstream sv_errorMessage;
-        sv_errorMessage << "Error: Unable to gain debug privilege\n"
             << std::system_category().message(::GetLastError()) << '\n';
         throw std::runtime_error(sv_errorMessage.str());
     }
