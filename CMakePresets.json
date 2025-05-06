@@ -1,0 +1,73 @@
+{
+    "version": 2,
+    "configurePresets": [
+        {
+            "name": "common-flags",
+            "hidden": true,
+            "generator": "Ninja",
+            "cacheVariables": {
+              "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+              "CMAKE_C_COMPILER": "x86_64-w64-mingw32-gcc",
+              "CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-g++"
+            }
+        },
+        {
+            "name": "debug32",
+            "displayName": "Debug preset",
+            "description": "Enables debugging flags",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": [
+                "common-flags"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug x86",
+                "CMAKE_C_FLAGS": "-DDEBUG -O0 -fno-pie -ggdb -m32",
+                "CMAKE_CXX_FLAGS": "-DDEBUG -O0 -fno-pie -ggdb -m32",
+                "CMAKE_EXE_LINKER_FLAGS": "-no-pie"
+            }
+        },
+        {
+            "name": "release32",
+            "displayName": "Release x86",
+            "description": "Fully featured Release build",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": [
+              "common-flags"
+            ],
+            "cacheVariables": {
+              "CMAKE_BUILD_TYPE": "Release",
+              "CMAKE_C_FLAGS": "-m32 -Wall",
+              "CMAKE_CXX_FLAGS": "-m32 -Wall"
+            }
+        },
+        {
+            "name": "debug64",
+            "displayName": "Debug x64",
+            "description": "Enables debugging flags",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": [
+                "common-flags"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_FLAGS": "-DDEBUG -O0 -fno-pie -ggdb -m64",
+                "CMAKE_CXX_FLAGS": "-DDEBUG -O0 -fno-pie -ggdb -m64",
+                "CMAKE_EXE_LINKER_FLAGS": "-no-pie"
+            }
+        },
+        {
+            "name": "release64",
+            "displayName": "Release x64",
+            "description": "Fully featured Release build",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": [
+              "common-flags"
+            ],
+            "cacheVariables": {
+              "CMAKE_BUILD_TYPE": "Release",
+              "CMAKE_C_FLAGS": "-m64 -Wall",
+              "CMAKE_CXX_FLAGS": "-m64 -Wall"
+            }
+        }
+    ]
+}
