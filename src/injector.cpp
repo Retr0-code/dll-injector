@@ -3,14 +3,20 @@
 
 #include "injector.hpp"
 
+#ifdef USE_WFUNCTIONS
+DLLInjector::DLLInjector(DWORD32 dw_pid, LPCWSTR lpcs_dllPath)
+#else
 DLLInjector::DLLInjector(DWORD32 dw_pid, LPCSTR lpcs_dllPath)
-: _sa_dllPath(lpcs_dllPath), _dw_pid(dw_pid) {
+#endif
+: _sw_dllPath(lpcs_dllPath), _dw_pid(dw_pid) {
     
+#ifdef USE_WFUNCTIONS
+    DWORD dw_procAttr = ::GetFileAttributesW(lpcs_dllPath);
+#else
     DWORD dw_procAttr = ::GetFileAttributesA(lpcs_dllPath);
+#endif
     if(dw_procAttr == INVALID_FILE_ATTRIBUTES || (dw_procAttr & FILE_ATTRIBUTE_DIRECTORY)) {
-        std::stringstream sv_errorMessage;
-        sv_errorMessage << "Error: Invalid DLL path=" << this->_sa_dllPath << '\n';
-        throw std::invalid_argument(sv_errorMessage.str());
+        throw std::invalid_argument("Error: Invalid DLL path\n");
     }
 
     if (!this->EnableDebugPrivilege()) {
@@ -31,36 +37,42 @@ DLLInjector::DLLInjector(DWORD32 dw_pid, LPCSTR lpcs_dllPath)
 }
 
 DLLInjector::~DLLInjector() {
+    ::VirtualFreeEx(this->_h_process, this->_lpv_dllAddress, this->_sw_dllPath.length(), MEM_RELEASE);
     ::CloseHandle(this->_h_process);
 }
 
 void DLLInjector::Inject(void) {
-    // Retrieves pointer to LoadLibraryA(scii) in KERNEL32.DLL
+    // Retrieves pointer to LoadLibraryW in KERNEL32.DLL
+#ifdef USE_WFUNCTIONS
+    LPVOID lpv_loadLibrary = (LPVOID)::GetProcAddress(
+        ::GetModuleHandleA("KERNEL32.dll"), "LoadLibraryW");
+#else
     LPVOID lpv_loadLibrary = (LPVOID)::GetProcAddress(
         ::GetModuleHandleA("KERNEL32.dll"), "LoadLibraryA");
+#endif
     
     if (lpv_loadLibrary == NULL)
     {
         std::stringstream sv_errorMessage;
-        sv_errorMessage << "Error: Unable to get KERNEL32.dll!LoadLibraryA address\n"
+        sv_errorMessage << "Error: Unable to get KERNEL32.dll!LoadLibrary address\n"
             << std::system_category().message(::GetLastError()) << '\n';
         throw std::runtime_error(sv_errorMessage.str());
     }
 
     // Allocates remote processes memory for new DLL
-    LPVOID lpv_dllAddress = (LPVOID)::VirtualAllocEx(
-        this->_h_process, nullptr, this->_sa_dllPath.length(),
+    this->_lpv_dllAddress = (LPVOID)::VirtualAllocEx(
+        this->_h_process, nullptr, this->_sw_dllPath.length(),
         MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     
-    if (lpv_dllAddress == NULL) {
+    if (this->_lpv_dllAddress == NULL) {
         std::stringstream sv_errorMessage;
         sv_errorMessage << "Error: Unable to allocate memory for DLL\n"
             << std::system_category().message(::GetLastError()) << '\n';
         throw std::runtime_error(sv_errorMessage.str());
     }
 
-    if (::WriteProcessMemory(this->_h_process, lpv_dllAddress,
-        this->_sa_dllPath.c_str(), this->_sa_dllPath.length(), 0) == 0) {
+    if (::WriteProcessMemory(this->_h_process, this->_lpv_dllAddress,
+        this->_sw_dllPath.c_str(), this->_sw_dllPath.length(), 0) == 0) {
         std::stringstream sv_errorMessage;
         sv_errorMessage << "Error: Unable to write load DLL\n"
             << std::system_category().message(::GetLastError()) << '\n';
@@ -68,7 +80,7 @@ void DLLInjector::Inject(void) {
     }
 
     if (::CreateRemoteThread(this->_h_process, 0, 0, (LPTHREAD_START_ROUTINE)lpv_loadLibrary,
-        (LPVOID)lpv_dllAddress, 0, 0) == NULL) {
+        this->_lpv_dllAddress, 0, 0) == NULL) {
         std::stringstream sv_errorMessage;
         sv_errorMessage << "Error: Unable to launch DLL thread\n"
             << std::system_category().message(::GetLastError()) << '\n';
@@ -89,7 +101,11 @@ bool DLLInjector::EnableDebugPrivilege(void) {
             break;
         }
         
+#ifdef USE_WFUNCTIONS
+        if (!::LookupPrivilegeValueW(NULL, (const WCHAR*)SE_DEBUG_NAME, &luid)) {
+#else
         if (!::LookupPrivilegeValueA(NULL, SE_DEBUG_NAME, &luid)) {
+#endif
             status = false;
             break;
         }
